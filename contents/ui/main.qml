@@ -23,11 +23,12 @@ PlasmoidItem {
         return Kirigami.Theme.negativeTextColor
     }
     
-    function addPingToHistory(ping) {
+    function addPingToHistory(ping, isError) {
         var history = root.pingHistory.slice()
         history.push({
             value: ping,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            error: isError || false
         })
         
         // Keep only last maxHistorySize entries
@@ -234,36 +235,69 @@ PlasmoidItem {
                             var chartWidth = width - chartPadding
                             var dataPoints = Math.min(root.pingHistory.length, root.maxHistorySize)
                             
-                            // Draw ping line
+                            // Draw ping line (with disconnections for timeouts)
                             ctx.strokeStyle = Kirigami.Theme.highlightColor
                             ctx.lineWidth = 2
-                            ctx.beginPath()
                             
                             // Always draw as if we have maxHistorySize points
                             var stepX = chartWidth / (root.maxHistorySize - 1)
                             var startIndex = Math.max(0, dataPoints - root.maxHistorySize)
                             
+                            var inPath = false
                             for (var k = 0; k < dataPoints; k++) {
-                                // Calculate x position: older data on left, newer on right
+                                var entry = root.pingHistory[k]
                                 var pointPosition = (root.maxHistorySize - dataPoints) + k
                                 var x = chartPadding + (pointPosition * stepX)
-                                var pingVal = root.pingHistory[k].value
+                                
+                                if (entry.error || entry.value === null) {
+                                    // End current path if we were drawing
+                                    if (inPath) {
+                                        ctx.stroke()
+                                        inPath = false
+                                    }
+                                    continue
+                                }
+                                
+                                var pingVal = entry.value
                                 var y = height - (pingVal / maxPing) * height
                                 
-                                if (k === 0) {
+                                if (!inPath) {
+                                    ctx.beginPath()
                                     ctx.moveTo(x, y)
+                                    inPath = true
                                 } else {
                                     ctx.lineTo(x, y)
                                 }
                             }
                             
-                            ctx.stroke()
+                            // Finish the last path if we were drawing
+                            if (inPath) {
+                                ctx.stroke()
+                            }
                             
                             // Draw points
                             for (var l = 0; l < dataPoints; l++) {
+                                var pointEntry = root.pingHistory[l]
                                 var pointPosition = (root.maxHistorySize - dataPoints) + l
                                 var pointX = chartPadding + (pointPosition * stepX)
-                                var pointVal = root.pingHistory[l].value
+                                
+                                // Handle error/timeout points
+                                if (pointEntry.error || pointEntry.value === null) {
+                                    // Draw X mark for timeouts
+                                    ctx.strokeStyle = Kirigami.Theme.negativeTextColor
+                                    ctx.lineWidth = 2
+                                    var size = 4
+                                    var pointY = height / 2  // Center vertically
+                                    ctx.beginPath()
+                                    ctx.moveTo(pointX - size, pointY - size)
+                                    ctx.lineTo(pointX + size, pointY + size)
+                                    ctx.moveTo(pointX + size, pointY - size)
+                                    ctx.lineTo(pointX - size, pointY + size)
+                                    ctx.stroke()
+                                    continue
+                                }
+                                
+                                var pointVal = pointEntry.value
                                 var pointY = height - (pointVal / maxPing) * height
                                 
                                 // Color code points
@@ -391,10 +425,12 @@ PlasmoidItem {
                 } else {
                     root.pingTime = "N/A"
                     root.pingError = true
+                    root.addPingToHistory(null, true)
                 }
             } else {
                 root.pingTime = "Error"
                 root.pingError = true
+                root.addPingToHistory(null, true)
             }
         }
     }
