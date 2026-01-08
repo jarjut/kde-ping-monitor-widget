@@ -1,0 +1,22 @@
+# Build output
+output/
+*.plasmoid
+*.zip
+
+# Backup files
+*~
+*.bak
+*.swp
+*.swo
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.kate-swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Plasma cache
+.directory
