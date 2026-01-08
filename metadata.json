@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "ahmadfajrulfalah1407@gmail.com",
+                "Name": "Ahmad Fajrulfalah"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Display network ping in the panel",
+        "Icon": "network-wired",
+        "Id": "dev.jarjut.plasma.ping",
+        "Name": "Ping Monitor",
+        "Version": "1.0",
+        "Website": ""
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
